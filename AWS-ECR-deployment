@@ -1,0 +1,10 @@
+1) Delete image (jar image in Docker console).
+2) mvn clean install
+3) mvn clean package jib:dockerBuild
+4) AWS -> Staging -> ECR (to get instance id)
+5) sudo docker tag npst-upi-cc-server:latest 825756878343.dkr.ecr.ap-south-1.amazonaws.com/npst-upi-cc-server:v34M // creating new docker image 
+6) saml2aws login // saml for aws login 
+7) aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 825756878343.dkr.ecr.ap-south-1.amazonaws.com // login to ECR 
+8) sudo docker push 825756878343.dkr.ecr.ap-south-1.amazonaws.com/npst-upi-cc-server:34M // push image into ECR 
+
+after this open spinnaker , and see if it started
