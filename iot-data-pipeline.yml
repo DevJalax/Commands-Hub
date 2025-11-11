@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS IoT Data Pipeline
+
+Resources:
+  # IAM Role for IoT Core to Kinesis
+  IoTRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: IoTToKinesisPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                Resource: !GetAtt IoTDataStream.Arn
+
+  # IoT Core Rule
+  IoTRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: IoTToKinesisRule
+      TopicRulePayload:
+        Sql: "SELECT * FROM 'iot/topic'"
+        Actions:
+          - Kinesis:
+              RoleArn: !GetAtt IoTRuleRole.Arn
+              StreamName: !Ref IoTDataStream
+              PartitionKey: "${newuuid()}"
+        RuleDisabled: false
+
+  # Kinesis Data Stream
+  IoTDataStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: IoTDataStream
+      ShardCount: 1
+
+  # S3 Bucket for Data Storage
+  IoTS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: iot-data-storage
+
+  # Timestream Database
+  IoTTimestreamDatabase:
+    Type: AWS::Timestream::Database
+    Properties:
+      DatabaseName: IoTDatabase
+
+  # Timestream Table
+  IoTTimestreamTable:
+    Type: AWS::Timestream::Table
+    Properties:
+      DatabaseName: !Ref IoTTimestreamDatabase
+      TableName: IoTTable
+
+  # Lambda Function for Data Processing
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:GetRecords
+                  - kinesis:GetShardIterator
+                  - kinesis:DescribeStream
+                  - kinesis:ListStreams
+                  - s3:PutObject
+                Resource: '*'
+
+  ProcessIoTDataLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ProcessIoTData
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          
+          s3 = boto3.client('s3')
+
+          def lambda_handler(event, context):
+              for record in event['Records']:
+                  payload = json.loads(record['kinesis']['data'])
+                  print(f"Processed Data: {payload}")
+                  
+                  # Example: Save to S3
+                  s3.put_object(
+                      Bucket="iot-data-storage",
+                      Key="processed/data.json",
+                      Body=json.dumps(payload)
+                  )
+              return {"statusCode": 200, "body": "Success"}
+
+  # Lambda Event Source Mapping to Kinesis
+  LambdaKinesisMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt IoTDataStream.Arn
+      FunctionName: !Ref ProcessIoTDataLambda
+      StartingPosition: LATEST
+
+  # Kinesis Data Analytics Application
+  KinesisAnalyticsApp:
+    Type: AWS::KinesisAnalytics::Application
+    Properties:
+      ApplicationName: IoTAnalyticsApp
+      Inputs:
+        - NamePrefix: input_stream
+          InputSchema:
+            RecordFormat:
+              RecordFormatType: JSON
+              MappingParameters:
+                JSONMappingParameters:
+                  RecordRowPath: "$"
+            RecordColumns:
+              - Name: device_id
+                SqlType: VARCHAR(16)
+                Mapping: "$.device_id"
+              - Name: temperature
+                SqlType: FLOAT
+                Mapping: "$.temperature"
+          KinesisStreamsInput:
+            ResourceARN: !GetAtt IoTDataStream.Arn
+          RoleARN: !GetAtt LambdaExecutionRole.Arn
+
+  # Step Function
+  IoTDataPipelineStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: IoTDataPipeline
+      RoleArn: !GetAtt LambdaExecutionRole.Arn
+      DefinitionString:
+        Fn::Sub: |
+          {
+            "Comment": "IoT Data Pipeline",
+            "StartAt": "ProcessIoTData",
+            "States": {
+              "ProcessIoTData": {
+                "Type": "Task",
+                "Resource": "${ProcessIoTDataLambda.Arn}",
+                "Next": "StoreDataS3"
+              },
+              "StoreDataS3": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::s3:putObject",
+                "Parameters": {
+                  "Bucket": "iot-data-storage",
+                  "Key": "processed/data.json",
+                  "Body": "data"
+                },
+                "End": true
+              }
+            }
+          }
