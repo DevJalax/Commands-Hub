@@ -1,0 +1,13 @@
+1) dmesg | grep -i "Killed process"
+2) curl -s http://169.254.169.254/latest/meta-data/instance-type
+3) ps aux --sort=-%mem | head -n 10
+4) dmesg | tail -20
+5) crontab -e
+6) * * * * * /path/to/oom_monitor.sh >> /var/log/oom_watch.log 2>&1
+7) tail -f /var/log/oom_watch.log
+
+to know oom score of each jar : 
+
+for pid in $(pgrep java); do 
+  echo "PID: $pid, OOM Score: $(cat /proc/$pid/oom_score), Adjust: $(cat /proc/$pid/oom_score_adj), CMD: $(ps -p $pid -o cmd --no-headers)"
+done
