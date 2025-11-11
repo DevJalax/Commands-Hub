@@ -1,0 +1,21 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          salesforce:
+            client-id: YOUR_CLIENT_ID
+            client-secret: YOUR_CLIENT_SECRET
+            scope: read
+            redirect-uri: "{baseUrl}/login/oauth2/code/salesforce"
+            authorization-grant-type: authorization_code
+            client-name: Salesforce
+        provider:
+          salesforce:
+            authorization-uri: https://login.salesforce.com/services/oauth2/authorize
+            token-uri: https://login.salesforce.com/services/oauth2/token
+            user-info-uri: https://login.salesforce.com/services/oauth2/userinfo
+
+# Salesforce Instance URL, replace with your instance URL
+salesforce:
+  instance-url: https://yourinstance.salesforce.com
