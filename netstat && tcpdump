@@ -1,0 +1,27 @@
+netstat -an | grep 80
+
+netstat -t | grep ESTABLISHED
+
+netstat -u | grep 53
+
+netstat -p 22
+
+netstat -l | grep 80
+
+netstat -r | grep default
+
+netstat -i | grep eth0
+
+netstat -s | grep TCP
+
+tcpdump -i eth0
+
+tcpdump -n -i eth0
+
+tcpdump -vv -i eth0
+
+tcpdump -s 0 -i eth0
+
+tcpdump -c 100 -i eth0
+
+tcpdump -w capture.pcap -i eth0 
