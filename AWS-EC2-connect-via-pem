@@ -1,0 +1,11 @@
+chmod 600 /home/jalakandeshwaran-r/Downloads/ppi-staging-npst-app-server.pem
+export AWS_REGION=ap-south-1
+export AWS_ACCESS_KEY_ID="ASIATAVABBVU7UGXIQ2E"
+export AWS_SECRET_ACCESS_KEY="r0uU6Y03TlRjEksNdkjiFd4ltvd2g/wxn77ubdl3"
+export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEMT//////////wEaCmFwLXNvdXRoLTEiRzBFAiEAqUSIL6AwZWfspEUBNiuxQBFy9pNmGU0WqTzQtw70V9kCIGvmKagaylWVGQt3Mv2fXumozNZ0pwGhZMqEdl/HcrcaKpIDCC0QABoMMjA3NTY3Nzg1MzIx..."
+aws --version
+aws s3 ls
+aws ssm start-session --target i-0922790637b8e9793 --region ap-south-1
+# or
+ssh -i "/home/jalakandeshwaran-r/Downloads/ppi-staging-npst-app-server.pem" ec2-user@<EC2_PUBLIC_IP>
+scp -i "/home/jalakandeshwaran-r/Downloads/ppi-staging-npst-app-server.pem" npst-ppi-dao-0.0.1-SNAPSHOT.jar ec2-user@<EC2_PUBLIC_IP>:/tmp
