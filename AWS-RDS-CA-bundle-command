@@ -1,0 +1,33 @@
+/home/jalakandeshwaran-r/Desktop/aws-ppi-key
+
+1) split -p "-----BEGIN CERTIFICATE-----" /home/jalakandeshwaran-r/Desktop/aws-ppi-key/global-bundle.pem rds-ca-
+
+or
+
+1) csplit -f rds-ca- /home/jalakandeshwaran-r/Desktop/aws-ppi-key/global-bundle.pem '/-----BEGIN CERTIFICATE-----/' '{*}'
+
+
+2) for CERT in rds-ca-*; do
+    alias=$(openssl x509 -noout -text -in $CERT | perl -ne 'next unless /Subject:/; s/.*(CN=|CN = )//; print')
+    echo "Importing $alias"
+    /usr/bin/keytool -import -file ${CERT} -alias "${alias}" -storepass changeit -keystore /home/jalakandeshwaran-r/Desktop/aws-ppi-key/trust.jks -noprompt
+    rm $CERT
+done
+rm /home/jalakandeshwaran-r/Desktop/aws-ppi-key/global-bundle.pem
+
+
+old rds instance : ppi-staging-npstx-db-temp-instance-1.cn0o26kia09p.ap-south-1.rds.amazonaws.com
+
+New rds instance : 
+
+storepass = changeit
+
+path to jks = /home/jalakandeshwaran-r/Desktop/aws-ppi-key/trust.jks
+
+
+for CERT in rds-ca-*; do
+    alias=$(openssl x509 -noout -text -in $CERT | perl -ne 'next unless /Subject:/; s/.*(CN=|CN = )//; print')
+    echo "Importing $alias"
+    /usr/bin/keytool -import -file ${CERT} -alias "${alias}" -storepass changeit -keystore /home/jalakandeshwaran-r/Desktop/aws-ppi-key/trust.jks -noprompt
+    rm $CERT
+done
