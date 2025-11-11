@@ -1,0 +1,15 @@
+$ sudo service keydb-server status
+$ sudo service keydb-server start
+$ sudo service keydb-server stop
+
+keydb-cli
+
+FLUSHALL
+
+$ echo "deb https://download.keydb.dev/open-source-dist $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/keydb.list
+$ sudo wget -O /etc/apt/trusted.gpg.d/keydb.gpg https://download.keydb.dev/open-source-dist/keyring.gpg
+$ sudo apt update
+$ sudo apt install keydb
+
+port : 6379
+localhost
