@@ -1,0 +1,39 @@
+Amazon SQS :
+ 
+1) While sending a message to an SQS queue, you must provide the Queue URL.
+ 
+2) While consuming a message from SQS, only the Queue Name is sufficient because the framework resolves the queue name to the URL internally.
+ 
+3) aws sqs create-queue --queue-name my-standard-queue (to create queue name)
+ 
+4) aws sqs get-queue-url --queue-name my-standard-queue (to get queue url)
+ 
+5) aws sqs list-queues (list all queues)
+
+6) What happens in SQS ?
+a) Produce
+b) Consume
+c) Delete
+
+7) Message retention period: 1 minute to 14 days (default is 4 days).
+
+8) When a message is retrieved, SQS locks it temporarily (Visibility Timeout) to prevent other consumers from processing it simultaneously.
+
+9) If processing is successful, the consumer deletes the message from the queue
+
+10) If a message remains unprocessed beyond the Dead-letter queue (DLQ) threshold, it moves to the DLQ for debugging.
+
+11) Default Credentials Provider: The SDK will automatically fetch credentials from the IAM instance profile attached to the EC2 instance.
+
+12) AWS provides temporary credentials (Access Key, Secret Key, and Session Token) for the role.
+
+13) These credentials are exposed through the Instance Metadata Service (IMDS) at a specific endpoint: http://169.254.169.254/latest/meta-data/iam/security-credentials/.
+
+14) role provides temporary credentials through the AWS instance metadata service. so credentials are fetched dynamically.
+
+15) If multiple consumers are polling from the same queue, each message is delivered to only one consumer (not all). SQS automatically distributes messages among available consumers.
+
+16) When a consumer picks up a message, it becomes invisible to others for a set duration (visibility timeout). The consumer must delete the message after processing to prevent redelivery.
+
+17) If a message isn’t deleted before the visibility timeout expires, it may be redelivered to another consumer. Use FIFO queues for exactly-once processing and message deduplication.
+
